@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080400">
+<title>Café Chai Terminal — Order smart. Brewed with intention.</title>
+<meta name="description" content="Order chai, sandwiches, fries and more at SGSITS campus. Smart ordering, fresh brews.">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="cursor"><div id="cursor-dot"></div></div>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <a href="#hero" class="nav-logo">Café Chai Terminal</a>
+  <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#about-section" onclick="closeNav()">About</a></li>
+    <li><a href="#workflow" onclick="closeNav()">How it works</a></li>
+    <li><a href="#menu-section" onclick="closeNav()">Menu</a></li>
+    <li><a href="admin/login.html" class="nav-admin-link">Staff login</a></li>
+  </ul>
+</nav>
+
+<!-- SECTION 1: HERO -->
+<section id="hero" class="full-section">
+  <canvas id="particles"></canvas>
+  <div class="hero-content">
+    <div class="badge reveal-fade">SGSITS · BPLK Shodh Foundation</div>
+    <h1 class="hero-title">
+      <span class="line reveal-slide">Café Chai</span>
+      <em class="line reveal-slide delay-1">Terminal</em>
+    </h1>
+    <p class="hero-sub reveal-fade delay-2">Order smart · Brewed with intention</p>
+    <div class="hero-cta reveal-fade delay-3">
+      <a href="#menu-section" class="btn-primary" id="cta-order">Order now</a>
+      <a href="#workflow" class="btn-ghost" id="cta-how">How it works</a>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- SECTION 2: TAGLINE / ABOUT -->
+<section id="about-section" class="full-section about-section">
+  <div class="about-content">
+    <p class="section-kicker reveal-fade">The experience</p>
+    <h2 class="about-headline">
+      <span class="reveal-slide">Freshly brewed.</span>
+      <em class="reveal-slide delay-1">Instantly ordered.</em>
+    </h2>
+    <p class="about-body reveal-fade delay-2">From steaming kulhad chai to loaded cheese sandwiches — everything on your campus café menu, ordered in seconds. No queues. No confusion. Just good food.</p>
+  </div>
+</section>
+
+<!-- SECTION 3: WORKFLOW -->
+<section id="workflow" class="full-section workflow-section">
+  <div class="workflow-inner">
+    <p class="section-kicker reveal-fade">How it works</p>
+    <h2 class="section-headline reveal-slide">From order to <em>your hands</em></h2>
+    <div class="steps-list">
+      <div class="step reveal-fade delay-1">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <div class="step-name">Browse menu</div>
+          <div class="step-desc">Explore chai, shakes, maggi, sandwiches, fries &amp; more.</div>
+        </div>
+      </div>
+      <div class="step reveal-fade delay-2">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <div class="step-name">Build your order</div>
+          <div class="step-desc">Add items, adjust quantities, mix and match freely.</div>
+        </div>
+      </div>
+      <div class="step reveal-fade delay-3">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <div class="step-name">Get your token</div>
+          <div class="step-desc">A unique token is issued. Show it when your order is called.</div>
+        </div>
+      </div>
+      <div class="step reveal-fade delay-4">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <div class="step-name">Kitchen prepares</div>
+          <div class="step-desc">Staff accepts your order and prepares it fresh.</div>
+        </div>
+      </div>
+      <div class="step reveal-fade delay-5">
+        <div class="step-num">05</div>
+        <div class="step-body">
+          <div class="step-name">Collect &amp; enjoy</div>
+          <div class="step-desc">Your token is called. Collect your order hot and fresh!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: MENU -->
+<section id="menu-section" class="menu-section-outer">
+  <div class="menu-section-header">
+    <p class="section-kicker reveal-fade">Full menu</p>
+    <h2 class="section-headline reveal-slide">What we <em>serve</em></h2>
+  </div>
+  <div class="menu-layout">
+    <nav class="category-nav" id="catNav"></nav>
+    <div class="menu-grid" id="menuGrid"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="f-title">Café Chai Terminal</div>
+    <p>Shri Govindram Seksaria Institute of Technology and Science</p>
+    <p class="f-sub">BPLK Shodh Foundation</p>
+  </div>
+</footer>
+
+<!-- Floating cart bar -->
+<div id="cart-bar">
+  <div class="cart-count" id="cartCount">0</div>
+  <span class="cart-summary" id="cartSummary">items</span>
+  <span class="cart-total" id="cartTotalBar">₹0</span>
+  <button class="checkout-btn" onclick="openOrder()">View order</button>
+</div>
+
+<!-- Order panel -->
+<div id="order-panel">
+  <div class="order-sheet">
+    <div class="sheet-title">
+      Your order
+      <button class="close-btn" onclick="closeOrder()">×</button>
+    </div>
+    <div id="orderLines"></div>
+    <div class="order-total-row">
+      <span>Total</span>
+      <span id="orderTotal" style="color:var(--gold)">₹0</span>
+    </div>
+    <input class="name-input" id="customerName" type="text" placeholder="Your name or table number" maxlength="40">
+    <button class="place-btn" id="placeBtn" onclick="placeOrder()">Confirm order</button>
+  </div>
+</div>
+
+<!-- Ticket panel -->
+<div id="ticket-panel">
+  <div class="ticket-card">
+    <div class="ticket-shimmer"></div>
+    <div class="ticket-label">Café Chai Terminal</div>
+    <div class="ticket-token-num" id="tToken">#01</div>
+    <div class="ticket-customer" id="tCustomer"></div>
+    <div class="ticket-dashed"></div>
+    <div id="tItems"></div>
+    <div class="ticket-dashed"></div>
+    <div class="ticket-total-line">
+      <span>Total</span>
+      <span id="tTotal"></span>
+    </div>
+    <div class="ticket-status" id="tStatus">Waiting for acceptance...</div>
+    <div class="ticket-thankyou">Thank you! Please wait for your order.</div>
+    <button class="ticket-new-btn" onclick="newOrder()">Place another order</button>
+  </div>
+</div>
+
+<script src="js/menu-data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Café Chai Terminal Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="admin-body dashboard-body">
+
+<div id="cursor"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span class="s-logo-text">Café Chai</span>
+    <span class="s-logo-sub">Admin panel</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="snav-item active" onclick="showTab('orders')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      Live orders
+      <span class="snav-badge" id="pendingBadge">0</span>
+    </a>
+    <a href="#" class="snav-item" onclick="showTab('history')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Order history
+    </a>
+    <a href="#" class="snav-item" onclick="showTab('stats')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Today's stats
+    </a>
+    <a href="#" class="snav-item" onclick="showTab('settings')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="admin-user-info">
+      <div class="admin-avatar" id="adminAvatar">A</div>
+      <div>
+        <div class="admin-name" id="adminNameDisplay">Admin</div>
+        <div class="admin-role">Owner</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </button>
+  </div>
+</aside>
+
+<!-- Main content -->
+<main class="dash-main">
+
+  <!-- Header -->
+  <header class="dash-header">
+    <div>
+      <h1 class="dash-title" id="tabTitle">Live orders</h1>
+      <p class="dash-subtitle" id="tabSubtitle">Manage and action incoming orders in real time</p>
+    </div>
+    <div class="header-actions">
+      <div class="live-indicator"><span class="live-dot"></span> Live</div>
+      <button class="refresh-btn" onclick="refreshAll()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- Stat cards row -->
+  <div class="stat-row" id="statRow">
+    <div class="stat-card">
+      <div class="stat-label">Pending</div>
+      <div class="stat-num" id="sPending">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Accepted</div>
+      <div class="stat-num" id="sAccepted">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Completed</div>
+      <div class="stat-num" id="sCompleted">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cancelled</div>
+      <div class="stat-num" id="sCancelled">0</div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-label">Today's revenue</div>
+      <div class="stat-num" id="sRevenue">₹0</div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('pending', this)">Pending</button>
+    <button class="filter-btn" onclick="setFilter('accepted', this)">Accepted</button>
+    <button class="filter-btn" onclick="setFilter('ready', this)">Ready</button>
+    <button class="filter-btn" onclick="setFilter('completed', this)">Completed</button>
+    <button class="filter-btn" onclick="setFilter('cancelled', this)">Cancelled</button>
+    <input type="text" class="search-orders" id="searchOrders" placeholder="Search by name or token..." oninput="renderOrders()">
+  </div>
+
+  <!-- TABS -->
+  <div id="tab-orders" class="tab-content">
+    <div class="orders-grid" id="ordersGrid"></div>
+  </div>
+
+  <div id="tab-history" class="tab-content" style="display:none">
+    <div class="history-table-wrap">
+      <table class="history-table" id="historyTable">
+        <thead>
+          <tr>
+            <th>Token</th><th>Customer</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-stats" class="tab-content" style="display:none">
+    <div class="stats-layout" id="statsLayout"></div>
+  </div>
+
+  <div id="tab-settings" class="tab-content" style="display:none">
+    <div class="settings-card">
+      <h2 class="settings-title">Change admin password</h2>
+      <div id="pwChangeMsg" class="pw-change-msg" style="display:none"></div>
+      <div class="field-group">
+        <label class="field-label">Current password</label>
+        <input type="password" id="curPw" class="field-input" placeholder="Enter current password" maxlength="64">
+      </div>
+      <div class="field-group">
+        <label class="field-label">New password</label>
+        <input type="password" id="newPw" class="field-input" placeholder="Min 8 characters" maxlength="64">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Confirm new password</label>
+        <input type="password" id="confirmPw" class="field-input" placeholder="Repeat new password" maxlength="64">
+      </div>
+      <button class="login-btn" style="max-width:220px;margin-top:0.5rem" onclick="changePassword()">Update password</button>
+
+      <div class="settings-divider"></div>
+      <h2 class="settings-title">Change admin username</h2>
+      <div id="userChangeMsg" class="pw-change-msg" style="display:none"></div>
+      <div class="field-group">
+        <label class="field-label">Current password (to confirm)</label>
+        <input type="password" id="userConfirmPw" class="field-input" placeholder="Enter current password" maxlength="64">
+      </div>
+      <div class="field-group">
+        <label class="field-label">New username</label>
+        <input type="text" id="newUsername" class="field-input" placeholder="Enter new username" maxlength="32" autocomplete="off">
+      </div>
+      <button class="login-btn" style="max-width:220px;margin-top:0.5rem" onclick="changeUsername()">Update username</button>
+
+      <div class="settings-divider"></div>
+      <h2 class="settings-title" style="color:#E24B4A">Danger zone</h2>
+      <button class="danger-btn" onclick="clearAllOrders()">Clear all orders data</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- Order detail modal -->
+<div id="orderModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-token" id="modalToken">#01</span>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Confirm dialog -->
+<div id="confirmDialog" class="modal-overlay" style="display:none">
+  <div class="modal-box confirm-box">
+    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel-btn" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-ok-btn" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/security.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/admin.js"></script>
+</body>
+</html>
