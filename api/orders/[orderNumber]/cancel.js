@@ -1,0 +1,3 @@
+﻿import { assertMethod, sendJson } from '../../_lib/http.js';
+import { actor, fail, loadOrder, publicOrder, updateStatus } from '../_service.js';
+export default async function handler(req,res) { try { if(!assertMethod(req,res,['POST'])) return; const user=await actor(req,false); const order=await loadOrder(user,false,req.query.orderNumber); if(!order) return fail(res,404,'NOT_FOUND','Order not found.'); if(order.order_status!=='pending') return fail(res,409,'CANNOT_CANCEL','Only pending orders can be cancelled.'); const updated=await updateStatus(user,order,'cancelled'); return sendJson(res,200,{order:publicOrder({...order,...updated})}); } catch(error) { return fail(res,error.status||401,'CANNOT_CANCEL',error.message||'Unable to cancel this order.'); } }

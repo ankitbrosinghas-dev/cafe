@@ -1,0 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
+export const adminDb = createClient(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+export async function requireUser(request) { const token = request.headers.authorization?.replace(/^Bearer\s+/i, ''); if (!token) throw new Error('Authentication required'); const { data, error } = await adminDb.auth.getUser(token); if (error || !data.user) throw new Error('Invalid session'); return data.user; }
+export async function requireStaff(request) { const user = await requireUser(request); const { data } = await adminDb.from('profiles').select('role').eq('id', user.id).single(); if (!data || !['staff','admin'].includes(data.role)) throw new Error('Staff access required'); return user; }

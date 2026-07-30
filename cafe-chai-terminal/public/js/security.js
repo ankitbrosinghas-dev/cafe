@@ -1,4 +1,4 @@
-/* js/security.js — Admin authentication & security */
+/* js/security.js â€” Admin authentication & security */
 
 /*
   HOW CREDENTIALS WORK:
@@ -17,7 +17,7 @@ const AdminAuth = (() => {
   const LOCKOUT_DURATION = 300; /* seconds = 5 minutes */
   const SESSION_DURATION = 4 * 60 * 60 * 1000; /* 4 hours ms */
 
-  /* Simple SHA-256 via SubtleCrypto — returns hex string */
+  /* Simple SHA-256 via SubtleCrypto â€” returns hex string */
   async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -27,7 +27,7 @@ const AdminAuth = (() => {
 
   /* Synchronous hash for quick checks using pre-computed values */
   function hashSync(str) {
-    /* djb2 hash — used only for fast local comparison fallback */
+    /* djb2 hash â€” used only for fast local comparison fallback */
     let hash = 5381;
     for (let i = 0; i < str.length; i++) {
       hash = ((hash << 5) + hash) + str.charCodeAt(i);
@@ -42,7 +42,7 @@ const AdminAuth = (() => {
     if (raw) {
       try { return JSON.parse(raw); } catch(e) {}
     }
-    /* Default credentials — stored as djb2 hashes */
+    /* Default credentials â€” stored as djb2 hashes */
     const defaults = {
       username: hashSync('admin'),
       password: hashSync('chai@2024'),

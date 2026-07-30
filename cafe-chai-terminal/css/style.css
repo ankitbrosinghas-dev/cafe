@@ -321,3 +321,12 @@ footer p { font-size: 12px; color: var(--text-dim); letter-spacing: 0.08em; }
   .hero-title { font-size: 40px; }
 }
 
+
+.order-message { display:none; margin:.6rem 0; font-size:13px; color:#F09595; }
+.order-message:not(:empty) { display:block; }
+.order-message.success { color:#97C459; }
+.order-sheet textarea.name-input { min-height:70px; resize:vertical; }
+.order-sheet select.name-input { color:var(--cream); }
+.order-sheet select.name-input option { color:#1a0d05; }
+
+.ticket-qr { display:block; width:148px; height:148px; margin:1.25rem auto .5rem; padding:8px; border-radius:8px; background:#fff; }

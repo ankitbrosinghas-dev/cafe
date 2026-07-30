@@ -1,5 +1,5 @@
 /* js/menu-data.js — All menu items for Café Chai Terminal */
-const MENU = [
+export const MENU = [
   { cat: "Tea & Coffee", items: [
     { name: "Regular Tea", price: 10 },
     { name: "Black Tea", price: 15 },

@@ -1,0 +1,12 @@
+.auth-page { min-height:100vh; display:grid; place-items:center; padding:2rem; background:var(--dark,#080400); color:var(--cream,#fdf6ec); font-family:'DM Sans',sans-serif; }
+.auth-card { width:min(100%,460px); background:var(--dark3,#241208); border:1px solid rgba(200,154,58,.25); border-radius:16px; padding:2rem; box-shadow:0 20px 60px rgba(0,0,0,.35); }
+.auth-card h1 { font-family:'Playfair Display',serif; margin:0 0 .4rem; }.auth-card p { color:var(--text-dim,#b5a89e); margin:.25rem 0 1.25rem; }.auth-card label { display:block; font-size:.85rem; margin:.9rem 0 .35rem; }.auth-card input { width:100%; box-sizing:border-box; padding:.8rem; border-radius:8px; border:1px solid rgba(255,255,255,.18); background:#170b05; color:#fff; }.auth-card button { width:100%; margin-top:1.2rem; }.auth-links { display:flex; justify-content:space-between; gap:1rem; margin-top:1rem; font-size:.85rem; }.auth-links a { color:var(--gold-light,#e5bd68); }.auth-message { min-height:1.25rem; margin:.75rem 0; color:#f09595; font-size:.9rem; }.auth-message.success { color:#97c459; }
+
+.customer-order { margin:1rem 0; padding:1rem; border:1px solid rgba(200,154,58,.25); border-radius:10px; }.customer-order div div { display:flex; justify-content:space-between; gap:1rem; margin:.3rem 0; }.order-qr { width:140px; height:140px; padding:6px; background:white; border-radius:6px; }
+.google-btn { display:flex; align-items:center; justify-content:center; gap:0.75rem; width:100%; padding:0.8rem; margin-top:1rem; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:transparent; color:#fff; font-family:inherit; font-weight:500; cursor:pointer; transition:all 0.2s ease; }
+.google-btn:hover { background:rgba(255,255,255,0.08); border-color:var(--gold-light,#e5bd68); }
+.google-btn svg { flex-shrink:0; }
+.auth-divider { display:flex; align-items:center; text-align:center; color:var(--text-dim,#b5a89e); font-size:0.8rem; margin:1.25rem 0; }
+.auth-divider::before, .auth-divider::after { content:''; flex:1; border-bottom:1px solid rgba(255,255,255,0.1); }
+.auth-divider:not(:empty)::before { margin-right:.5em; }
+.auth-divider:not(:empty)::after { margin-left:.5em; }

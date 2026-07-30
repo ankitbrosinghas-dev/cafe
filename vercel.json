@@ -1,4 +1,5 @@
-{
+﻿{
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "cafe-chai-terminal"
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }

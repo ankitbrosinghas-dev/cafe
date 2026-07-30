@@ -1,291 +1,45 @@
-/* js/admin.js — Admin dashboard logic */
-
-/* ---- AUTH GUARD ---- */
-if (!AdminAuth.isLoggedIn()) {
-  window.location.href = 'login.html';
-}
-
-/* Refresh session check every minute */
-setInterval(() => {
-  if (!AdminAuth.isLoggedIn()) window.location.href = 'login.html';
-}, 60000);
-
-/* ---- STATE ---- */
-let currentFilter = 'all';
-let currentTab = 'orders';
-
-/* ---- INIT ---- */
-(function init() {
-  const user = AdminAuth.getSessionUser();
-  document.getElementById('adminNameDisplay').textContent = user;
-  document.getElementById('adminAvatar').textContent = user.charAt(0).toUpperCase();
-  refreshAll();
-  /* Auto-refresh every 10 seconds */
-  setInterval(refreshAll, 10000);
-
-  /* Cursor */
-  const cur = document.getElementById('cursor');
-  document.addEventListener('mousemove', e => { cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px'; });
-  document.addEventListener('mousedown', () => cur.classList.add('big'));
-  document.addEventListener('mouseup', () => cur.classList.remove('big'));
-})();
-
-function refreshAll() {
-  updateStats();
-  if (currentTab === 'orders') renderOrders();
-  else if (currentTab === 'history') renderHistory();
-  else if (currentTab === 'stats') renderStats();
-}
-
-/* ---- TABS ---- */
-const TAB_META = {
-  orders:   { title: 'Live orders',     subtitle: 'Manage and action incoming orders in real time' },
-  history:  { title: 'Order history',   subtitle: 'Full log of all orders placed today and before' },
-  stats:    { title: "Today's stats",   subtitle: 'Revenue, popular items and order breakdown' },
-  settings: { title: 'Settings',        subtitle: 'Manage credentials and system data' }
+import { requireRole, signOut, signIn, updatePassword, updateProfile } from '../lib/auth.js';
+import { OrderService } from '../services/order-service.js';
+const profile = await requireRole(['staff', 'admin'], '../auth/login.html');
+if (!profile) throw new Error('Redirecting to sign in.');
+const STATUSES = ['pending', 'accepted', 'preparing', 'ready_for_pickup', 'completed', 'cancelled'];
+const STATUS_MAP = {
+  pending: 'Pending',
+  accepted: 'Accepted',
+  preparing: 'Preparing',
+  ready_for_pickup: 'Ready for Pickup',
+  completed: 'Completed',
+  cancelled: 'Cancelled'
 };
-
-function showTab(name) {
-  currentTab = name;
-  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-  document.getElementById('tab-' + name).style.display = 'block';
-  document.querySelectorAll('.snav-item').forEach(b => b.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  const meta = TAB_META[name];
-  document.getElementById('tabTitle').textContent = meta.title;
-  document.getElementById('tabSubtitle').textContent = meta.subtitle;
-  document.getElementById('filterBar').style.display = (name === 'orders') ? 'flex' : 'none';
-  document.getElementById('statRow').style.display = (name === 'orders' || name === 'stats') ? 'grid' : 'none';
-  refreshAll();
-}
-
-/* ---- STATS ---- */
+let orders = [], currentFilter = 'all', currentTab = 'orders';
+const esc = v => { const e = document.createElement('div'); e.textContent = v ?? ''; return e.innerHTML; };
+const money = v => `₹${Number(v || 0).toFixed(2).replace(/\.00$/, '')}`;
+const fmt = v => new Date(v).toLocaleString();
+async function loadOrders() { try { orders = await OrderService.getAll(); renderCurrent(); } catch (error) { document.getElementById('ordersGrid').innerHTML = `<div class="no-orders-admin">${esc(error.message || 'Unable to load orders.')}</div>`; } }
+function renderCurrent() { updateStats(); if (currentTab === 'orders') renderOrders(); else if (currentTab === 'history') renderHistory(); else if (currentTab === 'stats') renderStats(); }
 function updateStats() {
-  const all = OrderStore.getAll();
-  const today = OrderStore.todayOrders();
-  const pending    = all.filter(o => o.status === 'pending').length;
-  const accepted   = all.filter(o => o.status === 'accepted').length;
-  const completed  = all.filter(o => o.status === 'completed').length;
-  const cancelled  = all.filter(o => o.status === 'cancelled').length;
-  const revenue    = today.filter(o => o.status === 'completed').reduce((s, o) => s + o.total, 0);
-
-  document.getElementById('sPending').textContent   = pending;
-  document.getElementById('sAccepted').textContent  = accepted;
-  document.getElementById('sCompleted').textContent = completed;
-  document.getElementById('sCancelled').textContent = cancelled;
-  document.getElementById('sRevenue').textContent   = '₹' + revenue;
-  document.getElementById('pendingBadge').textContent = pending + accepted;
+  const count = status => orders.filter(o => o.orderStatus === status).length;
+  document.getElementById('sPending').textContent = count('pending');
+  document.getElementById('sAccepted').textContent = count('accepted') + count('preparing') + count('ready_for_pickup');
+  document.getElementById('sCompleted').textContent = count('completed');
+  document.getElementById('sCancelled').textContent = count('cancelled');
+  document.getElementById('sRevenue').textContent = money(orders.filter(o => o.orderStatus === 'completed').reduce((sum, o) => sum + Number(o.total), 0));
+  document.getElementById('pendingBadge').textContent = count('pending') + count('accepted') + count('preparing') + count('ready_for_pickup');
 }
+function filtered() { const q = (document.getElementById('searchOrders')?.value || '').toLowerCase().trim(); return orders.filter(o => (currentFilter === 'all' || o.orderStatus === currentFilter) && (!q || o.customerName.toLowerCase().includes(q) || o.phone.toLowerCase().includes(q))); }
+function renderOrders() { const grid = document.getElementById('ordersGrid'), list = filtered(); if (!list.length) { grid.innerHTML = '<div class="no-orders-admin">No orders to show</div>'; return; } grid.innerHTML = list.map(o => `<div class="order-card-admin"><div class="oca-header"><span class="oca-token">#${o.orderNumber.slice(0,8).toUpperCase()}</span><span class="oca-badge">${esc(STATUS_MAP[o.orderStatus] || o.orderStatus)}</span></div><div class="oca-customer">${esc(o.customerName)} · ${esc(o.phone)} · ${fmt(o.createdAt)}</div><div class="oca-items">${o.items.map(i => `<div class="oca-item-line"><span>${esc(i.name)}</span><span>×${i.quantity} &nbsp; ${money(i.subtotal)}</span></div>`).join('')}</div><div class="oca-total"><span>Total</span><span>${money(o.total)}</span></div><div class="oca-actions"><button class="oca-btn oca-btn-details" onclick="viewDetail('${o.orderNumber}')">Details</button><select class="oca-btn" onchange="changeStatus('${o.orderNumber}',this.value)">${STATUSES.map(s => `<option value="${s}" ${s === o.orderStatus ? 'selected' : ''}>${STATUS_MAP[s] || s}</option>`).join('')}</select></div></div>`).join(''); }
+async function changeStatus(id, status) { try { await OrderService.updateStatus(id, status); await loadOrders(); } catch (error) { alert(error.message || 'Could not update this order.'); } }
+function viewDetail(id) { const o = orders.find(x => x.orderNumber === id); if (!o) return; document.getElementById('modalToken').textContent = '#' + o.orderNumber.slice(0,8).toUpperCase() + ' — ' + o.customerName; document.getElementById('modalBody').innerHTML = `<div class="modal-detail-row"><span>Phone</span><span>${esc(o.phone)}</span></div><div class="modal-detail-row"><span>Address</span><span>${esc(o.address)}</span></div><div class="modal-detail-row"><span>Payment</span><span>${esc(o.payment_method)} (${esc(o.payment_status)})</span></div><div class="modal-detail-row"><span>Instructions</span><span>${esc(o.special_instructions || 'None')}</span></div>${o.items.map(i => `<div class="modal-detail-row"><span>${esc(i.name)} ×${i.quantity}</span><span>${money(i.subtotal)}</span></div>`).join('')}<div class="modal-detail-row"><span>Total</span><span>${money(o.total)}</span></div>`; document.getElementById('orderModal').style.display = 'flex'; }
+function renderHistory() { document.getElementById('historyBody').innerHTML = orders.map(o => `<tr><td>#${o.orderNumber.slice(0,8).toUpperCase()}</td><td>${esc(o.customerName)}<br><small>${esc(o.phone)}</small></td><td>${o.items.map(i => `${esc(i.name)} ×${i.quantity}`).join(', ')}</td><td>${money(o.total)}</td><td>${fmt(o.createdAt)}</td><td>${esc(STATUS_MAP[o.orderStatus] || o.orderStatus)}</td></tr>`).join('') || '<tr><td colspan="6">No orders yet</td></tr>'; }
+function renderStats() { document.getElementById('statsLayout').innerHTML = STATUSES.map(s => `<div class="stats-box"><div class="stats-box-title">${STATUS_MAP[s] || s}</div><div class="revenue-big">${orders.filter(o => o.orderStatus === s).length}</div></div>`).join(''); }
+function showTab(name) { currentTab=name; document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none'); document.getElementById('tab-'+name).style.display='block'; document.getElementById('filterBar').style.display=name==='orders'?'flex':'none'; renderCurrent(); }
+function setFilter(f,el) { currentFilter=f; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); renderOrders(); }
+function closeModal(){document.getElementById('orderModal').style.display='none';} function refreshAll(){loadOrders();} async function doLogout(){await signOut();window.location.href='../auth/login.html';}
+Object.assign(window,{showTab,setFilter,viewDetail,changeStatus,closeModal,refreshAll,doLogout});
+(function(){const u=profile.full_name;document.getElementById('adminNameDisplay').textContent=u;document.getElementById('adminAvatar').textContent=u.charAt(0).toUpperCase();document.getElementById('orderModal').addEventListener('click',e=>{if(e.target.id==='orderModal')closeModal();});loadOrders();try{OrderService.subscribe(loadOrders);}catch(_){ }setInterval(loadOrders,30000);})();
 
-/* ---- FILTER ---- */
-function setFilter(f, el) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  renderOrders();
-}
-
-/* ---- ORDERS GRID ---- */
-function renderOrders() {
-  const grid = document.getElementById('ordersGrid');
-  let orders = OrderStore.getAll();
-  const q = (document.getElementById('searchOrders')?.value || '').toLowerCase().trim();
-
-  if (currentFilter !== 'all') orders = orders.filter(o => o.status === currentFilter);
-  if (q) orders = orders.filter(o => o.customer.toLowerCase().includes(q) || o.token.includes(q));
-
-  if (!orders.length) {
-    grid.innerHTML = '<div class="no-orders-admin">No orders to show</div>';
-    return;
-  }
-
-  grid.innerHTML = orders.map(o => `
-    <div class="order-card-admin status-${o.status}" id="oc-${o.id}">
-      <div class="oca-header">
-        <span class="oca-token">#${o.token}</span>
-        <span class="oca-badge badge-${o.status}">${capitalize(o.status)}</span>
-      </div>
-      <div class="oca-customer">${escHtml(o.customer)} · ${fmtTime(o.createdAt)}</div>
-      <div class="oca-items">
-        ${o.items.map(i => `<div class="oca-item-line"><span>${escHtml(i.name)}</span><span>×${i.qty} &nbsp; ₹${i.qty * i.price}</span></div>`).join('')}
-      </div>
-      <div class="oca-total"><span>Total</span><span>₹${o.total}</span></div>
-      <div class="oca-actions">
-        ${actionButtons(o)}
-      </div>
-    </div>
-  `).join('');
-}
-
-function actionButtons(o) {
-  const s = o.status;
-  let btns = `<button class="oca-btn oca-btn-details" onclick="viewDetail('${o.id}')">Details</button>`;
-
-  if (s === 'pending') {
-    btns += `<button class="oca-btn oca-btn-accept" onclick="confirmAction('accept','${o.id}','Accept order #${o.token}?','Mark this order as accepted and start preparation.')">Accept</button>`;
-    btns += `<button class="oca-btn oca-btn-cancel" onclick="confirmAction('cancel','${o.id}','Cancel order #${o.token}?','This cannot be undone. The customer will be notified.')">Cancel</button>`;
-  } else if (s === 'accepted') {
-    btns += `<button class="oca-btn oca-btn-ready" onclick="confirmAction('ready','${o.id}','Mark #${o.token} as ready?','This tells the customer their order is ready to collect.')">Ready</button>`;
-    btns += `<button class="oca-btn oca-btn-cancel" onclick="confirmAction('cancel','${o.id}','Cancel order #${o.token}?','This cannot be undone.')">Cancel</button>`;
-  } else if (s === 'ready') {
-    btns += `<button class="oca-btn oca-btn-complete" onclick="confirmAction('complete','${o.id}','Complete order #${o.token}?','Mark as served and close this order.')">Complete</button>`;
-  }
-  return btns;
-}
-
-/* ---- ACTION CONFIRM DIALOG ---- */
-let pendingAction = null;
-
-function confirmAction(type, id, title, msg) {
-  pendingAction = { type, id };
-  document.getElementById('confirmTitle').textContent = title;
-  document.getElementById('confirmMsg').textContent = msg;
-  const okBtn = document.getElementById('confirmOkBtn');
-  okBtn.textContent = type === 'cancel' ? 'Yes, cancel order' : type === 'complete' ? 'Mark complete' : 'Confirm';
-  okBtn.className = 'confirm-ok-btn' + (type === 'cancel' ? '' : ' ok-green');
-  document.getElementById('confirmDialog').style.display = 'flex';
-}
-
-function closeConfirm() {
-  pendingAction = null;
-  document.getElementById('confirmDialog').style.display = 'none';
-}
-
-document.getElementById('confirmOkBtn').onclick = function () {
-  if (!pendingAction) return;
-  const { type, id } = pendingAction;
-  const statusMap = { accept: 'accepted', ready: 'ready', complete: 'completed', cancel: 'cancelled' };
-  OrderStore.updateStatus(id, statusMap[type]);
-  closeConfirm();
-  refreshAll();
-};
-
-/* ---- ORDER DETAIL MODAL ---- */
-function viewDetail(id) {
-  const o = OrderStore.getAll().find(x => x.id === id);
-  if (!o) return;
-  document.getElementById('modalToken').textContent = '#' + o.token + ' — ' + escHtml(o.customer);
-  document.getElementById('modalBody').innerHTML = `
-    <div class="modal-detail-row"><span style="color:var(--text-dim)">Status</span><span><span class="oca-badge badge-${o.status}">${capitalize(o.status)}</span></span></div>
-    <div class="modal-detail-row"><span style="color:var(--text-dim)">Time</span><span>${new Date(o.createdAt).toLocaleString()}</span></div>
-    <div class="modal-detail-row"><span style="color:var(--text-dim)">Customer</span><span>${escHtml(o.customer)}</span></div>
-    <div style="margin: 1rem 0 0.5rem; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);">Items</div>
-    ${o.items.map(i => `<div class="modal-detail-row"><span>${escHtml(i.name)}</span><span>×${i.qty} &nbsp; <span style="color:var(--gold)">₹${i.qty * i.price}</span></span></div>`).join('')}
-    <div class="modal-detail-row" style="margin-top:4px; font-size:15px; font-weight:500"><span>Total</span><span style="color:var(--gold-light)">₹${o.total}</span></div>
-  `;
-  document.getElementById('orderModal').style.display = 'flex';
-}
-
-function closeModal() { document.getElementById('orderModal').style.display = 'none'; }
-document.getElementById('orderModal').addEventListener('click', e => { if (e.target === document.getElementById('orderModal')) closeModal(); });
-
-/* ---- HISTORY ---- */
-function renderHistory() {
-  const orders = OrderStore.getAll();
-  const tbody = document.getElementById('historyBody');
-  if (!orders.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim);font-style:italic;">No orders yet</td></tr>'; return; }
-  tbody.innerHTML = orders.map(o => `
-    <tr>
-      <td style="color:var(--chai-light);font-weight:500">#${o.token}</td>
-      <td>${escHtml(o.customer)}</td>
-      <td style="color:var(--text-dim)">${o.items.map(i => i.name + ' ×' + i.qty).join(', ')}</td>
-      <td style="color:var(--gold)">₹${o.total}</td>
-      <td>${fmtTime(o.createdAt)}</td>
-      <td><span class="oca-badge badge-${o.status}">${capitalize(o.status)}</span></td>
-    </tr>
-  `).join('');
-}
-
-/* ---- STATS ---- */
-function renderStats() {
-  const today = OrderStore.todayOrders();
-  const revenue = today.filter(o => o.status === 'completed').reduce((s, o) => s + o.total, 0);
-
-  /* Top items */
-  const itemCounts = {};
-  today.forEach(o => { if (o.status !== 'cancelled') o.items.forEach(i => { itemCounts[i.name] = (itemCounts[i.name] || 0) + i.qty; }); });
-  const topItems = Object.entries(itemCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
-
-  /* Category breakdown */
-  const catCounts = {};
-  today.forEach(o => { if (o.status !== 'cancelled') o.items.forEach(i => { const cat = MENU.find(m => m.items.find(mi => mi.name === i.name)); if (cat) catCounts[cat.cat] = (catCounts[cat.cat] || 0) + i.qty; }); });
-
-  document.getElementById('statsLayout').innerHTML = `
-    <div class="stats-box">
-      <div class="stats-box-title">Today's revenue</div>
-      <div class="revenue-big">₹${revenue}</div>
-      <div class="revenue-sub">${today.filter(o => o.status === 'completed').length} completed orders today</div>
-    </div>
-    <div class="stats-box">
-      <div class="stats-box-title">Order breakdown today</div>
-      ${['pending','accepted','ready','completed','cancelled'].map(s => {
-        const c = today.filter(o => o.status === s).length;
-        return `<div class="top-item-row"><span class="top-item-name">${capitalize(s)}</span><span class="top-item-count">${c}</span></div>`;
-      }).join('')}
-    </div>
-    <div class="stats-box">
-      <div class="stats-box-title">Top items today</div>
-      ${topItems.length ? topItems.map(([name, count]) => `<div class="top-item-row"><span class="top-item-name">${escHtml(name)}</span><span class="top-item-count">${count} sold</span></div>`).join('') : '<div style="color:var(--text-dim);font-size:13px;padding:1rem 0">No sales yet today</div>'}
-    </div>
-    <div class="stats-box">
-      <div class="stats-box-title">Popular categories today</div>
-      ${Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).map(([cat, c]) => `<div class="top-item-row"><span class="top-item-name">${escHtml(cat)}</span><span class="top-item-count">${c} items</span></div>`).join('') || '<div style="color:var(--text-dim);font-size:13px;padding:1rem 0">No data yet</div>'}
-    </div>
-  `;
-}
-
-/* ---- SETTINGS ---- */
-function changePassword() {
-  const cur  = document.getElementById('curPw').value;
-  const nw   = document.getElementById('newPw').value;
-  const conf = document.getElementById('confirmPw').value;
-  const msg  = document.getElementById('pwChangeMsg');
-  msg.style.display = 'none';
-  if (nw !== conf) { showMsg(msg, 'error', 'New passwords do not match.'); return; }
-  const res = AdminAuth.changePassword(cur, nw);
-  showMsg(msg, res.success ? 'success' : 'error', res.message);
-  if (res.success) { document.getElementById('curPw').value = ''; document.getElementById('newPw').value = ''; document.getElementById('confirmPw').value = ''; }
-}
-
-function changeUsername() {
-  const pw   = document.getElementById('userConfirmPw').value;
-  const name = document.getElementById('newUsername').value.trim();
-  const msg  = document.getElementById('userChangeMsg');
-  msg.style.display = 'none';
-  const res = AdminAuth.changeUsername(pw, name);
-  showMsg(msg, res.success ? 'success' : 'error', res.message);
-  if (res.success) {
-    document.getElementById('adminNameDisplay').textContent = name;
-    document.getElementById('adminAvatar').textContent = name.charAt(0).toUpperCase();
-    document.getElementById('userConfirmPw').value = '';
-    document.getElementById('newUsername').value = '';
-  }
-}
-
-function showMsg(el, type, text) {
-  el.className = 'pw-change-msg ' + type;
-  el.textContent = text;
-  el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 4000);
-}
-
-function clearAllOrders() {
-  confirmAction('cancel', '_ALL_', 'Clear all order data?', 'This will permanently delete all orders. This cannot be undone.');
-  document.getElementById('confirmOkBtn').onclick = function () {
-    OrderStore.clearAll();
-    closeConfirm();
-    refreshAll();
-  };
-}
-
-function doLogout() {
-  AdminAuth.logout();
-  window.location.href = 'login.html';
-}
-
-/* ---- HELPERS ---- */
-function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+function showSettingsMessage(id, type, message) { const el = document.getElementById(id); el.className = 'pw-change-msg ' + type; el.textContent = message; el.style.display = 'block'; setTimeout(() => { el.style.display = 'none'; }, 4000); }
+async function changePassword() { const current = document.getElementById('curPw').value, next = document.getElementById('newPw').value, confirm = document.getElementById('confirmPw').value; if (next !== confirm) return showSettingsMessage('pwChangeMsg', 'error', 'New passwords do not match.'); try { await signIn(profile.email, current); await updatePassword(next); showSettingsMessage('pwChangeMsg', 'success', 'Password updated successfully.'); } catch (error) { showSettingsMessage('pwChangeMsg', 'error', error.message || 'Unable to update password.'); } }
+async function changeUsername() { const password = document.getElementById('userConfirmPw').value, name = document.getElementById('newUsername').value.trim(); try { await signIn(profile.email, password); profile.full_name = (await updateProfile(name)).full_name; document.getElementById('adminNameDisplay').textContent = name; document.getElementById('adminAvatar').textContent = name.charAt(0).toUpperCase(); showSettingsMessage('userChangeMsg', 'success', 'Username updated successfully.'); } catch (error) { showSettingsMessage('userChangeMsg', 'error', error.message || 'Unable to update username.'); } }
+function clearAllOrders() { showSettingsMessage('pwChangeMsg', 'error', 'Bulk deletion is disabled for Supabase orders. Delete records from Supabase only when required.'); }
+Object.assign(window, { changePassword, changeUsername, clearAllOrders });

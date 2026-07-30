@@ -1,4 +1,8 @@
-/* js/main.js — Customer ordering page logic */
+import { OrderService } from '../services/order-service.js';
+import { MENU } from './menu-data.js';
+import QRCode from 'qrcode';
+
+/* js/main.js Ã¢â‚¬â€ Customer ordering page logic */
 
 let cart = {};
 
@@ -145,7 +149,7 @@ function renderMenuSection() {
         <div class="item-controls">
           ${qty === 0
             ? `<button class="ctrl-btn" onclick="addItem('${escAttr(key)}',${item.price})">+</button>`
-            : `<button class="ctrl-btn" onclick="changeQty('${escAttr(key)}',-1)">−</button>
+            : `<button class="ctrl-btn" onclick="changeQty('${escAttr(key)}',-1)">-</button>
                <span class="ctrl-qty">${qty}</span>
                <button class="ctrl-btn" onclick="changeQty('${escAttr(key)}',1)">+</button>`
           }
@@ -174,64 +178,58 @@ function changeQty(name, delta) {
 
 function updateCartBar() {
   const keys = Object.keys(cart);
-  const total = keys.reduce((s, k) => s + cart[k].qty * cart[k].price, 0);
-  const count = keys.reduce((s, k) => s + cart[k].qty, 0);
+  const total = keys.reduce((sum, key) => sum + cart[key].qty * cart[key].price, 0);
+  const count = keys.reduce((sum, key) => sum + cart[key].qty, 0);
   document.getElementById('cartCount').textContent = count;
   document.getElementById('cartSummary').textContent = count === 1 ? 'item' : 'items';
-  document.getElementById('cartTotalBar').textContent = '₹' + total;
+  document.getElementById('cartTotalBar').textContent = 'Rs. ' + total;
   document.getElementById('cart-bar').classList.toggle('visible', count > 0);
 }
-
 /* ---- ORDER PANEL ---- */
 function openOrder() {
   const keys = Object.keys(cart);
   let html = '', total = 0;
-  keys.forEach(k => {
-    const { qty, price } = cart[k]; const sub = qty * price; total += sub;
-    html += `<div class="order-line"><span class="order-line-name">${escHtml(k)}</span><span class="order-line-qty">×${qty}</span><span class="order-line-price">₹${sub}</span></div>`;
-  });
+  keys.forEach(key => { const { qty, price } = cart[key]; const subtotal = qty * price; total += subtotal; html += `<div class="order-line"><span class="order-line-name">${escHtml(key)}</span><span class="order-line-qty">x${qty}</span><span class="order-line-price">Rs. ${subtotal}</span></div>`; });
   document.getElementById('orderLines').innerHTML = html || '<p style="color:rgba(253,246,236,0.3);font-size:13px;padding:1rem 0">Cart is empty</p>';
-  document.getElementById('orderTotal').textContent = '₹' + total;
+  document.getElementById('orderTotal').textContent = 'Rs. ' + total;
   document.getElementById('placeBtn').disabled = keys.length === 0;
   document.getElementById('order-panel').classList.add('open');
-}
-function closeOrder() { document.getElementById('order-panel').classList.remove('open'); }
+}function closeOrder() { document.getElementById('order-panel').classList.remove('open'); }
 
 /* ---- PLACE ORDER ---- */
-function placeOrder() {
-  const name = document.getElementById('customerName').value.trim();
-  const safeCustomer = name.slice(0, 40) || 'Guest';
-  const keys = Object.keys(cart);
-  if (!keys.length) return;
-  const items = keys.map(k => ({ name: k, qty: cart[k].qty, price: cart[k].price }));
-  const order = OrderStore.addOrder(safeCustomer, items);
-  document.getElementById('tToken').textContent = '#' + order.token;
-  document.getElementById('tCustomer').textContent = safeCustomer;
-  document.getElementById('tTotal').textContent = '₹' + order.total;
-  document.getElementById('tStatus').textContent = 'Waiting for acceptance...';
-  let thtml = '';
-  items.forEach(i => { thtml += `<div class="ticket-item-line"><span>${escHtml(i.name)} ×${i.qty}</span><span>₹${i.qty * i.price}</span></div>`; });
-  document.getElementById('tItems').innerHTML = thtml;
-  closeOrder();
-  document.getElementById('ticket-panel').classList.add('open');
-  const pollId = setInterval(() => {
-    const updated = OrderStore.getByToken(order.token);
-    if (updated) {
-      const labels = { pending: 'Waiting for acceptance...', accepted: 'Order accepted! Being prepared...', ready: 'Your order is ready! Collect at counter.', completed: 'Served. Enjoy!', cancelled: 'Order was cancelled. Please re-order.' };
-      const statusEl = document.getElementById('tStatus');
-      if (statusEl) {
-        statusEl.textContent = labels[updated.status] || updated.status;
-        statusEl.style.background = updated.status === 'cancelled' ? 'rgba(226,75,74,0.12)' : updated.status === 'ready' ? 'rgba(93,189,66,0.12)' : '';
-        statusEl.style.color = updated.status === 'cancelled' ? '#F09595' : updated.status === 'ready' ? '#97C459' : '';
-      }
-      if (updated.status === 'completed' || updated.status === 'cancelled') clearInterval(pollId);
-    }
-  }, 5000);
+let isSubmittingOrder = false;
+
+function setOrderMessage(message, type = 'error') {
+  const el = document.getElementById('orderMessage');
+  el.textContent = message;
+  el.className = 'order-message ' + type;
 }
 
-function newOrder() {
+async function placeOrder() {
+  if (isSubmittingOrder) return;
+  const name = document.getElementById('customerName').value.trim();
+  const phone = document.getElementById('customerPhone').value.trim();
+  const address = document.getElementById('customerAddress').value.trim();
+  const paymentMethod = document.getElementById('paymentMethod').value;
+  const keys = Object.keys(cart);
+  if (!keys.length) return setOrderMessage('Your cart is empty. Add an item before placing an order.');
+  if (!name || !phone || !address) return setOrderMessage('Please enter your name, phone number, and pickup details.');
+  const items = keys.map(k => ({ productName: k, quantity: cart[k].qty }));
+  const btn = document.getElementById('placeBtn'); isSubmittingOrder = true; btn.disabled = true; btn.textContent = 'Saving order...'; setOrderMessage('');
+  try {
+    const { order } = await OrderService.create({ items, paymentMethod: paymentMethod === 'Cash' ? 'cash_at_counter' : paymentMethod.toLowerCase(), idempotencyKey: crypto.randomUUID() });
+    document.getElementById('tToken').textContent = '#' + order.orderNumber;
+    document.getElementById('tCustomer').textContent = name;
+    document.getElementById('tTotal').textContent = 'Rs. ' + order.total;
+    document.getElementById('tStatus').textContent = 'Order received. We will begin preparing it shortly.';
+    const qr = document.getElementById('tQrCode'); qr.src = await QRCode.toDataURL(window.location.origin + '/pickup.html?token=' + encodeURIComponent(order.pickupToken), { width: 220, margin: 1 }); qr.hidden = false;
+    document.getElementById('tItems').innerHTML = keys.map(k => `<div class="ticket-item-line"><span>${escHtml(k)} x${cart[k].qty}</span><span>Rs. ${cart[k].qty * cart[k].price}</span></div>`).join('');
+    cart = {}; closeOrder(); document.getElementById('ticket-panel').classList.add('open'); renderMenuSection(); updateCartBar();
+  } catch (error) { setOrderMessage(error.message || 'Unable to place your order. Please check your connection and try again.'); }
+  finally { isSubmittingOrder = false; btn.disabled = false; btn.textContent = 'Confirm order'; }
+}function newOrder() {
   cart = {};
-  document.getElementById('customerName').value = '';
+  ['customerName','customerPhone','customerEmail','customerAddress','specialInstructions'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('ticket-panel').classList.remove('open');
   renderMenuSection(); updateCartBar();
   document.getElementById('menu-section').scrollIntoView({ behavior: 'smooth' });
@@ -240,3 +238,4 @@ function newOrder() {
 /* ---- INIT ---- */
 renderMenuSection();
 updateCartBar();
+

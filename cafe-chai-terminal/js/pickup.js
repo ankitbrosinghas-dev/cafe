@@ -1,0 +1,7 @@
+﻿import { getProfile, getSession } from '../lib/auth.js';
+const message=document.getElementById('pickupMessage'), details=document.getElementById('pickupOrder'), complete=document.getElementById('completePickup');
+const token=new URLSearchParams(window.location.search).get('token') || '';
+async function request(method='GET'){ const session=await getSession(); const response=await fetch(`/api/pickup/${encodeURIComponent(token)}`,{method,headers:{Authorization:`Bearer ${session.access_token}`}}); const body=await response.json(); if(!response.ok) throw new Error(body.error?.message||'Unable to verify pickup.'); return body.order; }
+function show(order){ message.textContent=`${order.orderNumber} · ${order.orderStatus}`; details.innerHTML=`<p><strong>${order.customerName}</strong></p>${order.items.map(i=>`<p>${i.name} ×${i.quantity}</p>`).join('')}`; complete.hidden=order.orderStatus!=='ready_for_pickup'; }
+const profile=await getProfile().catch(()=>null); if(!profile || !['staff','admin'].includes(profile.role)){ message.textContent='Staff sign-in is required to verify a pickup.'; } else if(!token){ message.textContent='This pickup link is invalid.'; } else { try { show(await request()); } catch(error) { message.textContent=error.message; } }
+complete.addEventListener('click',async()=>{complete.disabled=true;try{show(await request('POST'));message.textContent='Order marked as collected.';}catch(error){message.textContent=error.message;complete.disabled=false;}});

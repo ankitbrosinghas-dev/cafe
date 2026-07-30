@@ -1,0 +1,10 @@
+﻿import QRCode from 'qrcode';
+import { getProfile, signOut } from '../lib/auth.js';
+import { supabase } from '../lib/supabase.js';
+import { OrderService } from '../services/order-service.js';
+const profile = await getProfile().catch(() => null);
+if (!profile || profile.role !== 'customer') window.location.assign('../auth/login.html');
+const money = value => `₹${Number(value || 0).toFixed(2).replace(/\.00$/, '')}`;
+async function render() { try { const orders = await OrderService.getCustomer({ pageSize: 25 }); const target=document.getElementById('accountOrders'); target.innerHTML = orders.length ? '' : 'You have no orders yet.'; for (const order of orders) { const card=document.createElement('article'); const inactive=['completed','cancelled'].includes(order.orderStatus); card.className='customer-order'; card.innerHTML=`<p><strong>${order.orderNumber}</strong> · ${order.orderStatus}</p><p>${new Date(order.createdAt).toLocaleString()} · Estimated wait: ${inactive ? '—' : '15–25 minutes'}</p><div>${order.items.map(i=>`<div>${i.name} ×${i.quantity}<span>${money(i.lineTotal)}</span></div>`).join('')}</div><p><strong>Total ${money(order.total)}</strong></p><img class="order-qr" alt="Pickup QR code">${inactive ? '<p>This pickup QR code is inactive.</p>' : ''}`; const image=card.querySelector('img'); if(inactive) image.hidden=true; else image.src=await QRCode.toDataURL(`${window.location.origin}/pickup.html?token=${encodeURIComponent(order.pickupToken)}`,{width:180,margin:1}); target.appendChild(card); } } catch (_) { document.getElementById('accountOrders').textContent='Unable to load orders right now.'; } }
+if (profile?.role === 'customer') { document.getElementById('accountGreeting').textContent=`Hello, ${profile.full_name}. Your active and previous pickup orders appear below.`; await render(); supabase.channel('customer-order-status').on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`user_id=eq.${profile.id}`},render).subscribe(); }
+document.getElementById('signOutButton').addEventListener('click',async()=>{await signOut();window.location.assign('../auth/login.html');});

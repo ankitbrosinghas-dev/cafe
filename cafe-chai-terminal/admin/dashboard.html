@@ -101,10 +101,11 @@
     <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
     <button class="filter-btn" onclick="setFilter('pending', this)">Pending</button>
     <button class="filter-btn" onclick="setFilter('accepted', this)">Accepted</button>
-    <button class="filter-btn" onclick="setFilter('ready', this)">Ready</button>
+    <button class="filter-btn" onclick="setFilter('preparing', this)">Preparing</button>
+    <button class="filter-btn" onclick="setFilter('ready_for_pickup', this)">Ready</button>
     <button class="filter-btn" onclick="setFilter('completed', this)">Completed</button>
     <button class="filter-btn" onclick="setFilter('cancelled', this)">Cancelled</button>
-    <input type="text" class="search-orders" id="searchOrders" placeholder="Search by name or token..." oninput="renderOrders()">
+    <input type="text" class="search-orders" id="searchOrders" placeholder="Search by customer or phone..." oninput="renderOrders()">
   </div>
 
   <!-- TABS -->
@@ -191,8 +192,7 @@
   </div>
 </div>
 
-<script src="../js/security.js"></script>
-<script src="../js/storage.js"></script>
-<script src="../js/admin.js"></script>
+<script type="module" src="../js/admin.js"></script>
 </body>
 </html>
+

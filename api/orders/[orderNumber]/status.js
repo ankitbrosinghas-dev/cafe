@@ -1,0 +1,3 @@
+import { assertMethod, sendJson } from '../../_lib/http.js';
+import { actor, fail, loadOrder, publicOrder, updateStatus } from '../_service.js';
+export default async function handler(req,res) { try { if(!assertMethod(req,res,['POST'])) return; const user=await actor(req,true); const order=await loadOrder(user,true,req.query.orderNumber); if(!order) return fail(res,404,'NOT_FOUND','Order not found.'); const updated=await updateStatus(user,order,req.body?.status); return sendJson(res,200,{order:publicOrder({...order,...updated})}); } catch(error) { return fail(res,error.status||401,error.status===409?'INVALID_TRANSITION':'FORBIDDEN',error.message||'Unable to update this order.'); } }

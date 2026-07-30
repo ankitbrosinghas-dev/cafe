@@ -1,0 +1,2 @@
+import { assertMethod, sendJson } from '../../_lib/http.js'; import { actor, listOrders, fail } from './_service.js';
+export default async function handler(req,res) { try { if(!assertMethod(req,res,['GET'])) return; const user=await actor(req,false); return sendJson(res,200,await listOrders(user,false,req.query)); } catch (_) { return fail(res,401,'UNAUTHORIZED','Please sign in to continue.'); } }

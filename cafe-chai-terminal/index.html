@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#080400">
-<title>Café Chai Terminal — Order smart. Brewed with intention.</title>
+<title>Caf�?? ?© Chai Terminal â€” Order smart. Brewed with intention.</title>
 <meta name="description" content="Order chai, sandwiches, fries and more at SGSITS campus. Smart ordering, fresh brews.">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
@@ -16,7 +16,7 @@
 
 <!-- NAV -->
 <nav id="main-nav">
-  <a href="#hero" class="nav-logo">Café Chai Terminal</a>
+  <a href="#hero" class="nav-logo">Caf�?? ?© Chai Terminal</a>
   <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
     <span></span><span></span><span></span>
   </button>
@@ -24,7 +24,7 @@
     <li><a href="#about-section" onclick="closeNav()">About</a></li>
     <li><a href="#workflow" onclick="closeNav()">How it works</a></li>
     <li><a href="#menu-section" onclick="closeNav()">Menu</a></li>
-    <li><a href="admin/login.html" class="nav-admin-link">Staff login</a></li>
+    <li><a href="auth/login.html" class="nav-admin-link">Sign in</a></li>
   </ul>
 </nav>
 
@@ -32,12 +32,12 @@
 <section id="hero" class="full-section">
   <canvas id="particles"></canvas>
   <div class="hero-content">
-    <div class="badge reveal-fade">SGSITS · BPLK Shodh Foundation</div>
+    <div class="badge reveal-fade">SGSITS Â· BPLK Shodh Foundation</div>
     <h1 class="hero-title">
-      <span class="line reveal-slide">Café Chai</span>
+      <span class="line reveal-slide">Caf�?? ?© Chai</span>
       <em class="line reveal-slide delay-1">Terminal</em>
     </h1>
-    <p class="hero-sub reveal-fade delay-2">Order smart · Brewed with intention</p>
+    <p class="hero-sub reveal-fade delay-2">Order smart Â· Brewed with intention</p>
     <div class="hero-cta reveal-fade delay-3">
       <a href="#menu-section" class="btn-primary" id="cta-order">Order now</a>
       <a href="#workflow" class="btn-ghost" id="cta-how">How it works</a>
@@ -57,7 +57,7 @@
       <span class="reveal-slide">Freshly brewed.</span>
       <em class="reveal-slide delay-1">Instantly ordered.</em>
     </h2>
-    <p class="about-body reveal-fade delay-2">From steaming kulhad chai to loaded cheese sandwiches — everything on your campus café menu, ordered in seconds. No queues. No confusion. Just good food.</p>
+    <p class="about-body reveal-fade delay-2">From steaming kulhad chai to loaded cheese sandwiches â€” everything on your campus caf�?? ?© menu, ordered in seconds. No queues. No confusion. Just good food.</p>
   </div>
 </section>
 
@@ -121,7 +121,7 @@
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div class="f-title">Café Chai Terminal</div>
+    <div class="f-title">Caf�?? ?© Chai Terminal</div>
     <p>Shri Govindram Seksaria Institute of Technology and Science</p>
     <p class="f-sub">BPLK Shodh Foundation</p>
   </div>
@@ -131,7 +131,7 @@
 <div id="cart-bar">
   <div class="cart-count" id="cartCount">0</div>
   <span class="cart-summary" id="cartSummary">items</span>
-  <span class="cart-total" id="cartTotalBar">₹0</span>
+  <span class="cart-total" id="cartTotalBar">â‚¹0</span>
   <button class="checkout-btn" onclick="openOrder()">View order</button>
 </div>
 
@@ -140,14 +140,20 @@
   <div class="order-sheet">
     <div class="sheet-title">
       Your order
-      <button class="close-btn" onclick="closeOrder()">×</button>
+      <button class="close-btn" onclick="closeOrder()">�?? ?—</button>
     </div>
     <div id="orderLines"></div>
     <div class="order-total-row">
       <span>Total</span>
-      <span id="orderTotal" style="color:var(--gold)">₹0</span>
+      <span id="orderTotal" style="color:var(--gold)">â‚¹0</span>
     </div>
-    <input class="name-input" id="customerName" type="text" placeholder="Your name or table number" maxlength="40">
+    <div id="orderMessage" class="order-message" role="alert" aria-live="polite"></div>
+    <input class="name-input" id="customerName" type="text" placeholder="Your name" maxlength="80" required>
+    <input class="name-input" id="customerPhone" type="tel" placeholder="Phone number" maxlength="30" required>
+    <input class="name-input" id="customerEmail" type="email" placeholder="Email (optional)" maxlength="120">
+    <textarea class="name-input" id="customerAddress" placeholder="Delivery address or table number" maxlength="500" required></textarea>
+    <select class="name-input" id="paymentMethod"><option value="Cash">Pay at counter</option><option value="UPI">UPI</option><option value="Razorpay">Razorpay</option></select>
+    <textarea class="name-input" id="specialInstructions" placeholder="Special instructions (optional)" maxlength="300"></textarea>
     <button class="place-btn" id="placeBtn" onclick="placeOrder()">Confirm order</button>
   </div>
 </div>
@@ -156,7 +162,7 @@
 <div id="ticket-panel">
   <div class="ticket-card">
     <div class="ticket-shimmer"></div>
-    <div class="ticket-label">Café Chai Terminal</div>
+    <div class="ticket-label">Caf�?? ?© Chai Terminal</div>
     <div class="ticket-token-num" id="tToken">#01</div>
     <div class="ticket-customer" id="tCustomer"></div>
     <div class="ticket-dashed"></div>
@@ -166,14 +172,13 @@
       <span>Total</span>
       <span id="tTotal"></span>
     </div>
-    <div class="ticket-status" id="tStatus">Waiting for acceptance...</div>
+    <div class="ticket-status" id="tStatus">Waiting for acceptance...</div><img id="tQrCode" class="ticket-qr" alt="Pickup QR code" hidden>
     <div class="ticket-thankyou">Thank you! Please wait for your order.</div>
     <button class="ticket-new-btn" onclick="newOrder()">Place another order</button>
   </div>
 </div>
 
-<script src="js/menu-data.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/main.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>
+
