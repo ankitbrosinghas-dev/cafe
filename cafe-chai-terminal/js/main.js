@@ -2,7 +2,7 @@ import { OrderService } from '../services/order-service.js';
 import { MENU } from './menu-data.js';
 import QRCode from 'qrcode';
 
-/* js/main.js Ã¢â‚¬â€ Customer ordering page logic */
+/* js/main.js - Customer ordering page logic */
 
 let cart = {};
 

@@ -211,3 +211,15 @@
 .confirm-ok-btn:hover { background: #C03030; }
 .confirm-ok-btn.ok-green { background: var(--success); }
 .confirm-ok-btn.ok-green:hover { background: #40A030; }
+
+/* Restore default mouse cursor */
+body, button, a, input, select, textarea, label {
+  cursor: auto !important;
+}
+button, a {
+  cursor: pointer !important;
+}
+#cursor {
+  display: none !important;
+}
+

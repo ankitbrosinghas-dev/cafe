@@ -10,3 +10,15 @@
 .auth-divider::before, .auth-divider::after { content:''; flex:1; border-bottom:1px solid rgba(255,255,255,0.1); }
 .auth-divider:not(:empty)::before { margin-right:.5em; }
 .auth-divider:not(:empty)::after { margin-left:.5em; }
+
+/* Restore default mouse cursor */
+body, button, a, input, select, textarea, label {
+  cursor: auto !important;
+}
+button, a {
+  cursor: pointer !important;
+}
+#cursor {
+  display: none !important;
+}
+
